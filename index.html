@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Tutor Agent</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --border: #2a2a2a;
+    --accent: #c8a96e;
+    --accent2: #e8c98e;
+    --text: #e8e2d9;
+    --muted: #6b6560;
+    --user-bg: #1a1712;
+    --ai-bg: #111111;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier Prime', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.2rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: var(--surface);
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+
+  .logo span {
+    font-style: italic;
+    color: var(--accent2);
+  }
+
+  .tagline {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .mode-bar {
+    padding: 0.8rem 2rem;
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+
+  .mode-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.35rem 0.85rem;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .mode-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mode-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  .msg.user .msg-label { color: var(--accent); text-align: right; }
+
+  .msg-bubble {
+    padding: 1rem 1.3rem;
+    border: 1px solid var(--border);
+    line-height: 1.7;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+  }
+
+  .msg.user .msg-bubble {
+    background: var(--user-bg);
+    border-color: #2e2a22;
+    margin-left: 3rem;
+    border-left: 3px solid var(--accent);
+  }
+
+  .msg.ai .msg-bubble {
+    background: var(--ai-bg);
+    border-color: var(--border);
+    margin-right: 3rem;
+    border-left: 3px solid #2a4a2a;
+  }
+
+  .msg.ai .msg-label { color: #5a8a5a; }
+
+  .highlight { color: var(--accent); font-weight: 700; }
+  .correction { color: #e87878; text-decoration: line-through; }
+  .corrected { color: #78e878; }
+  .example { color: #7ab8e8; font-style: italic; }
+  .vocab-word { color: var(--accent2); font-weight: 700; }
+
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 1.2rem 2rem;
+    background: var(--surface);
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 0.8rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  textarea {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.95rem;
+    padding: 0.8rem 1rem;
+    resize: none;
+    min-height: 52px;
+    max-height: 140px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { outline: none; border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .send-btn {
+    background: var(--accent);
+    border: none;
+    color: var(--bg);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    padding: 0 1.4rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-weight: 700;
+  }
+
+  .send-btn:hover { background: var(--accent2); }
+  .send-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+  .hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+
+  .typing-indicator {
+    display: flex; gap: 4px; align-items: center; padding: 0.5rem 0;
+  }
+  .dot {
+    width: 6px; height: 6px; background: var(--muted);
+    border-radius: 50%; animation: bounce 1.2s infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,60%,100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  .welcome-card {
+    border: 1px solid var(--border);
+    padding: 2rem;
+    background: var(--ai-bg);
+    border-left: 3px solid #2a4a2a;
+  }
+
+  .welcome-card h2 {
+    font-family: 'Playfair Display', serif;
+    color: var(--accent);
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .welcome-card p { color: var(--text); line-height: 1.7; margin-bottom: 0.5rem; font-size: 0.92rem; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+
+  .chip {
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.8rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: 'Courier Prime', monospace;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">English <span>Tutor</span></div>
+    <div class="tagline">Il tuo agente personale per l'inglese</div>
+  </div>
+</header>
+
+<div class="mode-bar">
+  <button class="mode-btn active" onclick="setMode('free')" id="btn-free">💬 Conversazione libera</button>
+  <button class="mode-btn" onclick="setMode('correct')" id="btn-correct">✏️ Correggi il mio inglese</button>
+  <button class="mode-btn" onclick="setMode('vocab')" id="btn-vocab">📚 Vocabolario</button>
+  <button class="mode-btn" onclick="setMode('grammar')" id="btn-grammar">🔤 Grammatica</button>
+  <button class="mode-btn" onclick="setMode('translate')" id="btn-translate">🌍 Traduzione</button>
+</div>
+
+<div class="chat-area" id="chat">
+  <div class="msg ai">
+    <div class="msg-label">✦ English Tutor</div>
+    <div class="welcome-card">
+      <h2>Welcome! Benvenuto!</h2>
+      <p>Sono il tuo agente personale per imparare e migliorare l'inglese. Posso aiutarti con:</p>
+      <p>→ Conversazione in inglese (con correzioni gentili)<br>
+      → Correzione di testi che scrivi<br>
+      → Vocabolario e frasi idiomatiche<br>
+      → Grammatica spiegata in italiano<br>
+      → Traduzioni con spiegazioni</p>
+      <p>Scegli una modalità qui sopra oppure scrivi liberamente. Da dove vuoi iniziare?</p>
+      <div class="chip-row">
+        <div class="chip" onclick="useChip('Correggimi questa frase: Yesterday I go to the market')">Correggimi una frase</div>
+        <div class="chip" onclick="useChip('Come si dice \"comunque\" in inglese?')">Come si dice...?</div>
+        <div class="chip" onclick="useChip('Spiegami la differenza tra Since e For')">Since vs For</div>
+        <div class="chip" onclick="useChip('Fammi praticare la conversazione in inglese')">Conversazione</div>
+        <div class="chip" onclick="useChip('Dammi 5 phrasal verbs utili con esempi')">Phrasal verbs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-row">
+    <textarea id="userInput" placeholder="Scrivi in italiano o in inglese..." rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">→</button>
+  </div>
+  <div class="hint" id="hint">Premi Invio per inviare · Shift+Invio per andare a capo</div>
+</div>
+
+<script>
+  const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+  let currentMode = 'free';
+  let history = [];
+
+  const modePrompts = {
+    free: `Sei un tutor di inglese esperto che aiuta italiani. Conversa in modo naturale. Quando l'utente scrive in inglese, rispondi in inglese correggendo gentilmente eventuali errori in fondo al messaggio. Quando scrive in italiano, rispondi in italiano ma includi sempre esempi in inglese. Usa un tono caldo e incoraggiante. Formatta le correzioni così: ❌ frase sbagliata → ✅ frase corretta. Metti esempi tra virgolette.`,
+    correct: `Sei un correttore di inglese esperto. L'utente ti scrive frasi o testi in inglese (o in italiano da tradurre). Tu devi:
+1. Mostrare l'originale
+2. Correggere tutti gli errori spiegando PERCHÉ in italiano
+3. Dare la versione corretta
+4. Offrire varianti più naturali o avanzate
+Usa questo formato: ❌ Errore: [errore] → ✅ Corretto: [versione giusta] — Perché: [spiegazione]`,
+    vocab: `Sei un esperto di vocabolario inglese. Quando l'utente chiede una parola o espressione, dai: il significato, la pronuncia (approssimata), esempi di uso, sinonimi, espressioni idiomatiche correlate, e il livello (base/intermedio/avanzato). Spiega sempre in italiano. Se l'utente chiede phrasal verbs o idiomi, dai almeno 3 esempi pratici per ciascuno.`,
+    grammar: `Sei un insegnante di grammatica inglese. Spiega le regole grammaticali in italiano in modo chiaro e semplice, con molti esempi. Usa tabelle o liste quando utile. Se l'utente fa un esercizio, correggilo e spiega gli errori. Copri: tempi verbali, proposizioni, articoli, congiuntivo, condizionale, ecc.`,
+    translate: `Sei un traduttore esperto italiano-inglese. Quando l'utente dà un testo da tradurre, fornisci:
+1. La traduzione principale (naturale)
+2. Una variante più formale e una più informale (se pertinente)
+3. Note su scelte traduttive interessanti o difficili
+4. Parole chiave o espressioni da ricordare
+Spiega sempre le scelte in italiano.`
+  };
+
+  const modeHints = {
+    free: 'Conversazione libera — scrivi in italiano o in inglese',
+    correct: 'Scrivi una frase o un testo in inglese da correggere',
+    vocab: 'Chiedi una parola, espressione o phrasal verb',
+    grammar: 'Chiedi una regola grammaticale o fai un esercizio',
+    translate: 'Scrivi il testo italiano da tradurre'
+  };
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + mode).classList.add('active');
+    document.getElementById('hint').textContent = modeHints[mode];
+    history = [];
+  }
+
+  function useChip(text) {
+    document.getElementById('userInput').value = text;
+    sendMessage();
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function addMsg(role, text) {
+    const chat = document.getElementById('chat');
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    const label = role === 'user' ? '✦ Tu' : '✦ English Tutor';
+    div.innerHTML = `<div class="msg-label">${label}</div><div class="msg-bubble">${formatText(text)}</div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  function formatText(text) {
+    return text
+      .replace(/❌([^→\n]+)/g, '<span class="correction">❌$1</span>')
+      .replace(/✅([^\n]+)/g, '<span class="corrected">✅$1</span>')
+      .replace(/"([^"]+)"/g, '<span class="example">"$1"</span>')
+      .replace(/\*\*([^*]+)\*\*/g, '<span class="vocab-word">$1</span>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  }
+
+  function showTyping() {
+    const chat = document.getElementById('chat');
+    const div = document.createElement('div');
+    div.className = 'msg ai';
+    div.id = 'typing';
+    div.innerHTML = `<div class="msg-label">✦ English Tutor</div><div class="msg-bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    document.getElementById('sendBtn').disabled = true;
+
+    addMsg('user', text);
+    history.push({ role: 'user', content: text });
+    showTyping();
+
+    try {
+      const res = await fetch(ANTHROPIC_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: modePrompts[currentMode],
+          messages: history
+        })
+      });
+
+      const data = await res.json();
+      removeTyping();
+
+      const reply = data.content?.[0]?.text || 'Errore: nessuna risposta ricevuta.';
+      history.push({ role: 'assistant', content: reply });
+      addMsg('ai', reply);
+    } catch (e) {
+      removeTyping();
+      addMsg('ai', 'Errore di connessione. Riprova tra poco.');
+    }
+
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('userInput').focus();
+  }
+</script>
+</body>
+</html>
